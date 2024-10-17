@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Function to display help and usage
+show_help() {
+    echo "User Account Management Script"
+    echo "Options:"
+    echo "-c or --create : Create a new user account"
+    echo "-d or --delete : Delete an existing user account"
+    echo "-r or --reset  : Reset password for a user account"
+    echo "-l or --list   : List all user accounts"
+    echo "-h or --help   : Display usage information"
+}
+
+# Function to create a user
+create_user() {
+    read -p "Enter username to create: " username
+    if id "$username" &>/dev/null; then
+        echo "User $username already exists."
+    else
+        read -sp "Enter password for new user: " password
+        sudo useradd -m "$username"
+        echo "$username:$password" | sudo chpasswd
+        echo -e "\nUser $username created successfully."
+    fi
+}
+
+# Function to delete a user
+delete_user() {
+    read -p "Enter username to delete: " username
+    if id "$username" &>/dev/null; then
+        sudo deluser --remove-home "$username"
+        echo "User $username deleted successfully."
+    else
+        echo "User $username does not exist."
+    fi
+}
+
+# Function to reset a user's password
+reset_password() {
+    read -p "Enter username to reset password: " username
+    if id "$username" &>/dev/null; then
+        read -sp "Enter new password for $username: " password
+        echo "$username:$password" | sudo chpasswd
+        echo -e "\nPassword for $username has been updated."
+    else
+        echo "User $username does not exist."
+    fi
+}
+
+# Function to list all users
+list_users() {
+    echo "Listing all users and their UIDs:"
+    awk -F':' '{ print $1 " (UID: " $3 ")" }' /etc/passwd
+}
+
+# Parse command-line arguments
+case "$1" in
+    -c|--create)
+        create_user
+        ;;
+    -d|--delete)
+        delete_user
+        ;;
+    -r|--reset)
+        reset_password
+        ;;
+    -l|--list)
+        list_users
+        ;;
+    -h|--help)
+        show_help
+        ;;
+    *)
+        echo "Invalid option. Use -h or --help for usage information."
+        exit 1
+        ;;
+esac
